@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Baskı Fiyatlandırıcı • Bişeyler Yapalım</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#141820;--card:#1c2235;--card2:#212840;--border:#2d3655;
+  --accent:#5b8dee;--green:#4ecba8;--yellow:#f0c060;--red:#ff5c5c;
+  --text:#dde3f0;--muted:#5a6a8a;--note:#1a2540;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:60px;}
+
+/* HEADER */
+.header{background:var(--card);border-bottom:3px solid var(--accent);text-align:center;padding:28px 20px 20px;}
+.header h1{font-family:'JetBrains Mono',monospace;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:700;color:var(--text);}
+.header h1 span{color:var(--accent);}
+.brand{color:var(--accent);font-size:.95rem;margin:6px 0 14px;font-weight:600;}
+.social-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}
+.social-links a{font-size:.82rem;padding:5px 14px;border-radius:20px;text-decoration:none;font-weight:600;transition:opacity .2s;border:1px solid currentColor;}
+.social-links a:hover{opacity:.7;}
+.s-web{color:#5b8dee;}.s-yt{color:#ff4444;}.s-ig{color:#c850c0;}
+
+.wrapper{max-width:800px;margin:0 auto;padding:0 14px;}
+
+/* CARD */
+.card{background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-top:16px;overflow:hidden;}
+.card-header{background:var(--accent);padding:10px 18px;font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:700;color:#0d1117;}
+.card-body{padding:20px 18px;}
+
+/* DENEYIM */
+.exp-grid{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+.exp-btn{background:#1a2235;border:2px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;padding:11px 18px;border-radius:10px;cursor:pointer;transition:all .2s;text-align:center;}
+.exp-btn small{display:block;font-size:.7rem;opacity:.6;font-weight:400;margin-top:3px;}
+.exp-btn.active-yeni{background:#4ecba820;border-color:#4ecba8;color:#4ecba8;}
+.exp-btn.active-orta{background:#f0c06020;border-color:#f0c060;color:#f0c060;}
+.exp-btn.active-pro{background:#5b8dee20;border-color:#5b8dee;color:#5b8dee;}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;background:#161c2e;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:#1a2540;}
+.drop-zone.loaded{border-color:var(--green);border-style:solid;background:#0d2a1e;}
+.drop-zone .icon{font-size:1.8rem;margin-bottom:6px;}
+.drop-zone p{font-size:.88rem;color:var(--muted);}
+.drop-zone.loaded p{color:var(--green);font-weight:600;}
+.auto-read{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.auto-item{background:var(--note);border-radius:8px;padding:8px 12px;}
+.auto-item label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:2px;}
+.auto-item .val{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--green);font-weight:700;}
+.divider-label{text-align:center;font-size:.76rem;color:var(--muted);margin:14px 0 10px;}
+
+/* FORM */
+.form-section{margin-bottom:4px;}
+.section-title{font-size:.78rem;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.form-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;margin-bottom:8px;}
+.form-row label{font-size:.86rem;color:var(--text);}
+.hint{font-size:.72rem;color:var(--muted);}
+input[type=number],select{background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.88rem;padding:7px 10px;border-radius:7px;width:108px;outline:none;transition:border-color .2s;-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+input[type=number]:focus,select:focus{border-color:var(--accent);}
+select{width:auto;max-width:100%;cursor:pointer;}
+.unit{font-size:.76rem;color:var(--accent);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.select-row{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;margin-bottom:10px;}
+.select-row label{font-size:.86rem;color:var(--text);white-space:nowrap;}
+.select-row select{width:100%;}
+.sel-note{font-size:.76rem;margin-top:4px;padding:5px 10px;border-radius:6px;background:var(--note);}
+.sel-note.ok{color:var(--green);}.sel-note.warn{color:var(--yellow);}
+.note-box{background:var(--note);border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--muted);margin-bottom:14px;}
+
+/* CHECKBOX */
+.check-row{display:flex;align-items:center;gap:8px;padding:10px 0;}
+.check-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--green);cursor:pointer;}
+.check-row label{font-size:.88rem;cursor:pointer;}
+#kabin-result{font-size:.78rem;color:var(--green);margin-left:4px;}
+
+/* ADET */
+.adet-box{background:#1a2d1a;border:1px solid var(--green);border-radius:10px;padding:12px 16px;margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.adet-box label{font-size:.88rem;color:var(--green);font-weight:600;}
+.adet-box small{font-size:.74rem;color:var(--muted);}
+
+/* PRESET */
+.preset-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.preset-bar button{font-size:.76rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.preset-bar button:hover{border-color:var(--accent);color:var(--accent);}
+.preset-bar .save-btn{border-color:var(--green);color:var(--green);}
+.preset-bar .save-btn:hover{background:#1a2d1a;}
+.preset-label{font-size:.76rem;color:var(--muted);}
+
+/* BUTTONS */
+.calc-btn{width:100%;padding:15px;margin-top:18px;background:var(--accent);color:#0d1117;font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;letter-spacing:.5px;transition:all .2s;}
+.calc-btn:hover{background:#7fa8f5;transform:translateY(-1px);}
+.wa-btn{width:100%;padding:13px;margin-top:8px;background:#25d366;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;display:none;transition:all .2s;}
+.wa-btn:hover{background:#1ebe5a;transform:translateY(-1px);}
+
+/* SONUÇ */
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid #1e2840;}
+.result-row:last-child{border-bottom:none;}
+.r-label{font-size:.88rem;color:var(--text);}
+.r-val{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--green);font-weight:600;}
+.r-val.yellow{color:var(--yellow);}
+.r-val.blue{color:var(--accent);}
+.result-divider{height:1px;background:var(--border);margin:8px 0;}
+.result-final{display:flex;justify-content:space-between;align-items:center;padding:12px 4px 4px;}
+.result-final .r-label{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;}
+.result-final .r-val{font-family:'JetBrains Mono',monospace;font-size:1.35rem;font-weight:700;color:var(--green);}
+.result-adet{background:#1a2d1a;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+.result-adet .r-label{font-size:.9rem;color:var(--green);}
+.result-adet .r-val{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;color:var(--green);}
+.kazanc-box{background:#1a2040;border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:8px;text-align:center;}
+.kazanc-box p{font-size:.82rem;color:var(--muted);}
+.kazanc-box strong{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:1.05rem;}
+
+/* GRAFİK */
+.chart-wrap{max-width:280px;margin:18px auto 0;}
+
+.postproc-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.postproc-row:last-child{border-bottom:none;}
+.postproc-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;}
+.postproc-row label{font-size:.86rem;cursor:pointer;flex:1;}
+.pp-bilgi{font-size:.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+
+.footer{text-align:center;padding:28px 20px 10px;}
+.footer p{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
+
+@media(max-width:540px){
+  .auto-read{grid-template-columns:1fr;}
+  .exp-grid{flex-direction:column;}
+  .form-row{grid-template-columns:1fr;}
+  input[type=number]{width:100%;}
+  .select-row{grid-template-columns:1fr;}
+  .adet-box{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🖨 3D BASKI <span>FİYATLANDIRICI</span></h1>
+  <p class="brand">Bişeyler Yapalım</p>
+  <div class="social-links">
+    <a href="https://www.biseyleryapalim.com/" target="_blank" class="s-web">🌐 Web Sitesi</a>
+    <a href="https://www.youtube.com/c/Bi%C5%9FeylerYapal%C4%B1m" target="_blank" class="s-yt">▶ YouTube</a>
+    <a href="https://www.instagram.com/biseyler_yapalim/" target="_blank" class="s-ig">📸 Instagram</a>
+  </div>
+</div>
+
+<div class="wrapper">
+
+<!-- ADIM 1: DENEYİM -->
+<div class="card">
+  <div class="card-header">⚙ ADIM 1 — Deneyim Seviyeniz</div>
+  <div class="card-body">
+    <div class="exp-grid">
+      <button class="exp-btn" onclick="setExp('yeni',15)" id="btn-yeni">🟢 YENİ BAŞLAYAN<small>% 15 hata oranı</small></button>
+      <button class="exp-btn" onclick="setExp('orta',8)"  id="btn-orta">🟡 ORTA SEVİYE<small>% 8 hata oranı</small></button>
+      <button class="exp-btn" onclick="setExp('pro',3)"   id="btn-pro" >🔵 PROFESYONEL<small>% 3 hata oranı</small></button>
+    </div>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:.86rem;color:var(--muted);">Genel hata oranı →</label>
+        <input type="number" id="error_rate" value="0" min="0" max="100" style="width:72px">
+        <span class="unit">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:.86rem;color:var(--muted);">Ek fire / destek →</label>
+        <input type="number" id="support_extra" value="0" min="0" max="100" style="width:72px" title="Destek malzemesi, warping, ilk katman hatası için ekstra fire">
+        <span class="unit">%</span>
+      </div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:8px;">Ek fire: destek malzemesi, warping, yapışmama gibi ekstra kayıplar için</p>
+  </div>
+</div>
+
+<!-- ADIM 2: G-CODE -->
+<div class="card">
+  <div class="card-header">📁 ADIM 2 — G-Code Dosyası Yükle</div>
+  <div class="card-body">
+    <div class="drop-zone" id="dropZone"
+         onclick="document.getElementById('gcodeFile').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleDrop(event)">
+      <div class="icon">📂</div>
+      <p id="dropText">Tıklayın veya G-Code dosyasını buraya sürükleyin<br><small>Cura · Bambu Studio · OrcaSlicer · PrusaSlicer · .gcode · .bgcode</small></p>
+    </div>
+    <input type="file" id="gcodeFile" accept=".gcode,.gc,.gco,.bgcode" style="display:none" onchange="handleFile(this.files[0])">
+    <div id="parse-hata" style="display:none;background:#2d1515;border:1px solid var(--red);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#ff8a8a;margin-bottom:10px;"></div>
+
+    <div class="auto-read">
+      <div class="auto-item"><label>Filament</label><div class="val" id="r-fil">—</div></div>
+      <div class="auto-item"><label>Baskı Süresi</label><div class="val" id="r-time">—</div></div>
+      <div class="auto-item"><label>Yazıcı</label><div class="val" id="r-printer">—</div></div>
+      <div class="auto-item"><label>Filament Tipi</label><div class="val" id="r-ftype">—</div></div>
+    </div>
+
+    <p class="divider-label">— G-Code yoksa aşağıya elle girin —</p>
+    <div class="form-row">
+      <label>Filament (gram)</label>
+      <div><input type="number" id="filament_g" value="0" min="0" step="0.1"></div>
+      <span class="unit">gr</span>
+    </div>
+    <div class="form-row">
+      <label>Baskı Süresi (saat)</label>
+      <div><input type="number" id="print_hours" value="0" min="0" step="0.1"></div>
+      <span class="unit">saat</span>
+    </div>
+  </div>
+</div>
+
+<!-- ADIM 3: FİYAT BİLGİLERİ -->
+<div class="card">
+  <div class="card-header">💰 ADIM 3 — Fiyat Bilgileri</div>
+  <div class="card-body">
+
+    <!-- PRESET BAR -->
+    <div class="preset-bar">
+      <span class="preset-label">Kayıtlı Ayarlar:</span>
+      <div id="preset-btns"></div>
+      <button class="save-btn" onclick="presetKaydet()">💾 Kaydet</button>
+    </div>
+
+    <div class="note-box">ℹ️ &nbsp;Makina ömrünü aşağıdan ayarlayabilirsiniz &nbsp;•&nbsp; Tüm değerler düzenlenebilir</div>
+
+    <!-- YAZICI -->
+    <div class="form-section">
+      <p class="section-title">YAZICI MODELİ</p>
+      <div class="select-row">
+        <label>Yazıcı :</label>
+        <select id="sel_yazici" onchange="yaziciSec()"></select>
+      </div>
+      <div class="form-row">
+        <label>Ortalama Güç</label>
+        <div><input type="number" id="printer_watt" value="200" min="0" style="width:90px"></div>
+        <span class="unit">Watt</span>
+      </div>
+      <div class="sel-note ok" id="watt-note">Listeden seçin veya elle girin</div>
+    </div>
+
+    <!-- FİLAMENT -->
+    <div class="form-section" style="margin-top:14px">
+      <p class="section-title">FİLAMENT TİPİ</p>
+      <div class="select-row">
+        <label>Tip :</label>
+        <select id="sel_fil" onchange="filamentSec()"></select>
+      </div>
+      <div class="sel-note ok" id="fil-note">—</div>
+    </div>
+
+    <hr style="border-color:var(--border);margin:16px 0">
+
+    <!-- MALİYET -->
+    <div class="form-section">
+      <p class="section-title">MALİYET BİLGİLERİ</p>
+
+      <div class="form-row">
+        <label>Filament Fiyatı</label>
+        <div><input type="number" id="fil_price" value="750" min="0"></div>
+        <span class="unit">TL/kg</span>
+      </div>
+      <div class="form-row">
+        <label>Elektrik Fiyatı</label>
+        <div><input type="number" id="elec_price" value="4.20" min="0" step="0.01"></div>
+        <span class="unit">TL/kWh</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">2026 ortalama mesken fiyatı. Faturanıza göre değiştirebilirsiniz.</p>
+      <div class="form-row">
+        <label>Yazıcı Alış Fiyatı</label>
+        <div><input type="number" id="printer_cost" value="8000" min="0"></div>
+        <span class="unit">TL</span>
+      </div>
+      <div class="form-row">
+        <label>Makina Ömrü</label>
+        <div><input type="number" id="printer_life" value="3000" min="100"></div>
+        <span class="unit">saat</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Yoğun kullanım: 2000 · Normal: 3000 · Bambu/Prusa: 4000+</p>
+      <div class="form-row">
+        <label>Sarf Malzeme + Bakım (aylık)</label>
+        <div><input type="number" id="sarf_monthly" value="200" min="0"></div>
+        <span class="unit">TL</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Nozzle, bant, yapıştırıcı, bakım vb.</p>
+      <div class="form-row">
+        <label>Aylık Baskı Adetiniz</label>
+        <div><input type="number" id="sarf_prints" value="20" min="1"></div>
+        <span class="unit">adet</span>
+      </div>
+      <div class="form-row">
+        <label>Saatlik Emek Ücretin</label>
+        <div><input type="number" id="hourly_wage" value="200" min="0"></div>
+        <span class="unit">TL/saat</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Tasarım gerektiren işler için daha yüksek tutabilirsiniz</p>
+      <div class="form-row">
+        <label>Bu Baskıya Harcadığın Emek</label>
+        <div><input type="number" id="labor_h" value="1" min="0" step="0.5"></div>
+        <span class="unit">saat</span>
+      </div>
+      <div class="form-row">
+        <label>Ek Masraf</label>
+        <div><input type="number" id="extra_cost" value="0" min="0"></div>
+        <span class="unit">TL</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Paketleme, boyama, zımpara, astar vb.</p>
+      <div class="form-row">
+        <label>Kâr Marjı</label>
+        <div><input type="number" id="profit" value="30" min="0"></div>
+        <span class="unit">%</span>
+      </div>
+      <div class="form-row">
+        <label>Platform Komisyonu</label>
+        <div><input type="number" id="commission" value="0" min="0" max="99" step="0.5"></div>
+        <span class="unit">%</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Etsy: 6.5 &nbsp;|&nbsp; Trendyol: 15 &nbsp;•&nbsp; <b style="color:var(--green)">Satış fiyatı üzerinden doğru hesaplanır</b></p>
+      <div class="form-row">
+        <label>Kargo</label>
+        <div><input type="number" id="kargo" value="0" min="0"></div>
+        <span class="unit">TL</span>
+      </div>
+      <div class="form-row">
+        <label>KDV</label>
+        <div><input type="number" id="kdv" value="20" min="0" max="100"></div>
+        <span class="unit">%</span>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px">Türkiye'de standart KDV %20 · KDV istemiyorsanız 0 yazın</p>
+    </div>
+
+    <!-- SON İŞLEM -->
+    <div class="form-section" style="margin-top:14px">
+      <p class="section-title">🎨 SON İŞLEM (POST-PROCESSING)</p>
+      <p class="hint" style="margin-bottom:10px">Uyguladığınız işlemleri işaretleyin, maliyete otomatik eklenir</p>
+
+      <div id="postproc-list">
+        <div class="postproc-row" data-maliyet="30" data-sure="0.5">
+          <input type="checkbox" id="pp1" onchange="postprocGuncelle()">
+          <label for="pp1">🔲 Zımpara (kaba + ince)</label>
+          <span class="pp-bilgi">+30 TL · +0.5 saat</span>
+        </div>
+        <div class="postproc-row" data-maliyet="50" data-sure="0.5">
+          <input type="checkbox" id="pp2" onchange="postprocGuncelle()">
+          <label for="pp2">🎨 Astar / Boya</label>
+          <span class="pp-bilgi">+50 TL · +0.5 saat</span>
+        </div>
+        <div class="postproc-row" data-maliyet="40" data-sure="0.25">
+          <input type="checkbox" id="pp3" onchange="postprocGuncelle()">
+          <label for="pp3">✨ Vernik / Kaplama</label>
+          <span class="pp-bilgi">+40 TL · +0.25 saat</span>
+        </div>
+        <div class="postproc-row" data-maliyet="20" data-sure="0.5">
+          <input type="checkbox" id="pp4" onchange="postprocGuncelle()">
+          <label for="pp4">🔩 Montaj / Birleştirme</label>
+          <span class="pp-bilgi">+20 TL · +0.5 saat</span>
+        </div>
+        <div class="postproc-row" data-maliyet="60" data-sure="1.0">
+          <input type="checkbox" id="pp5" onchange="postprocGuncelle()">
+          <label for="pp5">🧪 Aseton / Epoksi / Dolgu</label>
+          <span class="pp-bilgi">+60 TL · +1 saat</span>
+        </div>
+      </div>
+      <div id="pp-toplam" style="display:none;margin-top:8px;padding:8px 12px;background:var(--note);border-radius:6px;font-size:.82rem;color:var(--green);">
+        Son işlem toplamı: <b id="pp-toplam-txt"></b>
+      </div>
+    </div>
+
+    <!-- KABİN ISITICI -->
+    <div class="check-row">
+      <input type="checkbox" id="kabin" onchange="toggleKabin()">
+      <label for="kabin">🔥 Kabin Isıtıcı kullanıyorum <small style="color:var(--muted)">(300W otomatik eklenir)</small></label>
+      <span id="kabin-result"></span>
+    </div>
+
+    <!-- BASKI ADEDİ -->
+    <div class="adet-box">
+      <div>
+        <label>📦 Baskı Adedi</label><br>
+        <small>Aynı anda kaç adet üretiyorsunuz?</small>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" id="adet" value="1" min="1" style="width:80px">
+        <span class="unit">adet</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<button class="calc-btn" onclick="hesapla()">🧮 &nbsp; FİYATI HESAPLA</button>
+<button class="wa-btn" id="wa-btn" onclick="teklifKopyala()">🟢 &nbsp; WHATSAPP İÇİN KOPYALA</button>
+
+<!-- SONUÇ -->
+<div class="card" id="result-card" style="display:none">
+  <div class="card-header">📊 SONUÇ</div>
+  <div class="card-body">
+    <div id="result-body"></div>
+    <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>Bişeyler Yapalım • 3D Baskı Fiyatlandırıcı • Ücretsiz Araç</p>
+  <div class="social-links">
+    <a href="https://www.biseyleryapalim.com/" target="_blank" class="s-web">🌐 Web Sitesi</a>
+    <a href="https://www.youtube.com/c/Bi%C5%9FeylerYapal%C4%B1m" target="_blank" class="s-yt">▶ YouTube</a>
+    <a href="https://www.instagram.com/biseyler_yapalim/" target="_blank" class="s-ig">📸 Instagram</a>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── VERİ ─────────────────────────────────────────────────
+const YAZICILAR={
+  "— Yazıcı Seçin —":0,
+  "Bambu Lab A1 mini":70,"Bambu Lab A1 mini Combo":70,"Bambu Lab A1":90,"Bambu Lab A1 Combo":90,
+  "Bambu Lab P1P":100,"Bambu Lab P1S":100,"Bambu Lab P1S Combo":100,
+  "Bambu Lab P2S":120,"Bambu Lab P2S Combo":120,
+  "Bambu Lab X1C":150,"Bambu Lab X1C Combo":150,"Bambu Lab X1E":150,"Bambu Lab X2D":200,
+  "Bambu Lab H2D":400,"Bambu Lab H2D Pro":400,"Bambu Lab H2S":350,"Bambu Lab H2C":400,
+  "Creality Ender 3":120,"Creality Ender 3 Pro":150,"Creality Ender 3 V2":120,
+  "Creality Ender 3 V2 Neo":130,"Creality Ender 3 V3":150,"Creality Ender 3 V3 SE":130,
+  "Creality Ender 3 V3 KE":140,"Creality Ender 3 V4":160,"Creality Ender 3 V4 Combo":160,
+  "Creality Ender 3 Neo":130,"Creality Ender 3 Max Neo":200,
+  "Creality Ender 3 S1":180,"Creality Ender 3 S1 Pro":200,
+  "Creality Ender 5":150,"Creality Ender 5 Pro":150,"Creality Ender 5 Plus":250,"Creality Ender 5 S1":250,
+  "Creality K1":200,"Creality K1C":200,"Creality K1 Max":300,
+  "Creality K2 Plus":350,"Creality K2 Plus Combo":350,"Creality K2 Pro":350,"Creality K2 Pro Combo":350,
+  "Creality CR-10":200,"Creality CR-10 SE":200,"Creality CR-10 Max":250,"Creality CR-10 Smart Pro":250,"Creality CR-M4":350,
+  "Creality Sermoon V1":180,"Creality Sermoon V1 Pro":200,"Creality Sermoon D3":400,"Creality Sermoon D3 Pro":450,"Creality Sermoon X1":350,
+  "Prusa Mini+":90,"Prusa i3 MK3S+":120,"Prusa i3 MK4":140,"Prusa i3 MK4S":140,"Prusa XL":300,"Prusa Core One":200,
+  "Anycubic Kobra":150,"Anycubic Kobra 2":150,"Anycubic Kobra 2 Pro":200,"Anycubic Kobra 2 Max":300,
+  "Anycubic Kobra 3":200,"Anycubic Kobra 3 Combo":200,"Anycubic Kobra S1":250,"Anycubic Kobra S1 Combo":250,"Anycubic Vyper":180,
+  "Elegoo Neptune 3":150,"Elegoo Neptune 3 Pro":180,"Elegoo Neptune 4":200,"Elegoo Neptune 4 Pro":200,
+  "Elegoo Neptune 4 Max":300,"Elegoo Neptune 4 Plus":250,
+  "Artillery Sidewinder X2":200,"Artillery Genius Pro":150,"Artillery Hornet":120,
+  "Flashforge Adventurer 5M":200,"Flashforge Adventurer 5M Pro":200,"Flashforge Creator 3":400,
+  "Snapmaker 2.0 A150":120,"Snapmaker 2.0 A250":150,"Snapmaker 2.0 A350":200,
+  "Snapmaker Artisan":250,"Snapmaker J1":200,"Snapmaker J1s":200,"Snapmaker U1":300,
+  "Voron 0.2":120,"Voron Trident":300,"Voron 2.4":350,
+  "Sovol SV06":150,"Sovol SV06 Plus":200,"Sovol SV08":300,
+  "⚠️  Yazıcım listede yok — elle gireceğim":0,
+};
+
+const FILAMENTLER={
+  "PLA":       {fiyat:750, ek:0,   aciklama:"En yaygın, düşük ısı"},
+  "PETG":      {fiyat:900, ek:20,  aciklama:"Dayanıklı, orta ısı"},
+  "ABS":       {fiyat:850, ek:60,  aciklama:"Kapalı kabin gerekli, yüksek ısı"},
+  "ASA":       {fiyat:1000,ek:60,  aciklama:"ABS gibi ama UV dayanıklı"},
+  "TPU":       {fiyat:1100,ek:20,  aciklama:"Esnek filament"},
+  "Nylon (PA)":{fiyat:1400,ek:80,  aciklama:"Çok yüksek ısı, kurutma şart"},
+  "PC":        {fiyat:1800,ek:100, aciklama:"En yüksek ısı, zorlu baskı"},
+  "PLA-CF/GF": {fiyat:1800,ek:0,   aciklama:"Karbon/cam elyaf, PLA ısısı"},
+  "PETG-CF":   {fiyat:2200,ek:20,  aciklama:"Karbon elyaf, PETG ısısı"},
+  "PA-CF/GF":  {fiyat:2500,ek:80,  aciklama:"Karbon elyaf, yüksek ısı"},
+  "PVA":       {fiyat:3000,ek:0,   aciklama:"Destek filamenti, suda çözünür"},
+  "Diğer":     {fiyat:750, ek:0,   aciklama:"Fiyatı kendiniz girin"},
+};
+
+const FILAMENT_YOGUNLUK={
+  "PLA":1.24,"PETG":1.27,"ABS":1.05,"ASA":1.07,"TPU":1.21,
+  "Nylon (PA)":1.13,"PC":1.20,"PLA-CF/GF":1.30,"PETG-CF":1.30,
+  "PA-CF/GF":1.25,"PVA":1.23,"Diğer":1.24
+};
+
+function filamentYogunluk(){
+  const tip=document.getElementById('sel_fil').value;
+  return FILAMENT_YOGUNLUK[tip]||1.24;
+}
+
+const GCODE_MAP={
+  "a1 mini":"Bambu Lab A1 mini","a1mini":"Bambu Lab A1 mini","a1":"Bambu Lab A1",
+  "p1p":"Bambu Lab P1P","p1s":"Bambu Lab P1S","p2s":"Bambu Lab P2S",
+  "x1c":"Bambu Lab X1C","x1 carbon":"Bambu Lab X1C","x1e":"Bambu Lab X1E",
+  "x2d":"Bambu Lab X2D","h2d pro":"Bambu Lab H2D Pro","h2d":"Bambu Lab H2D",
+  "h2s":"Bambu Lab H2S","h2c":"Bambu Lab H2C",
+  "ender 3 v4 combo":"Creality Ender 3 V4 Combo","ender 3 v4":"Creality Ender 3 V4",
+  "ender 3 v3 se":"Creality Ender 3 V3 SE","ender 3 v3 ke":"Creality Ender 3 V3 KE",
+  "ender 3 v3":"Creality Ender 3 V3","ender 3 v2 neo":"Creality Ender 3 V2 Neo",
+  "ender 3 v2":"Creality Ender 3 V2","ender 3 s1 pro":"Creality Ender 3 S1 Pro",
+  "ender 3 s1":"Creality Ender 3 S1","ender 3 pro":"Creality Ender 3 Pro",
+  "ender 3":"Creality Ender 3","ender 5 s1":"Creality Ender 5 S1",
+  "ender 5 plus":"Creality Ender 5 Plus","ender 5 pro":"Creality Ender 5 Pro",
+  "ender 5":"Creality Ender 5","k2 pro combo":"Creality K2 Pro Combo",
+  "k2 plus combo":"Creality K2 Plus Combo","k2 pro":"Creality K2 Pro",
+  "k2 plus":"Creality K2 Plus","k1 max":"Creality K1 Max","k1c":"Creality K1C","k1":"Creality K1",
+  "sermoon d3 pro":"Creality Sermoon D3 Pro","sermoon d3":"Creality Sermoon D3",
+  "sermoon x1":"Creality Sermoon X1","sermoon v1 pro":"Creality Sermoon V1 Pro","sermoon v1":"Creality Sermoon V1",
+  "mk4s":"Prusa i3 MK4S","mk4":"Prusa i3 MK4","mk3s":"Prusa i3 MK3S+",
+  "core one":"Prusa Core One","prusa mini":"Prusa Mini+",
+  "kobra s1 combo":"Anycubic Kobra S1 Combo","kobra s1":"Anycubic Kobra S1",
+  "kobra 3 combo":"Anycubic Kobra 3 Combo","kobra 3":"Anycubic Kobra 3",
+  "kobra 2 pro":"Anycubic Kobra 2 Pro","kobra 2 max":"Anycubic Kobra 2 Max",
+  "kobra 2":"Anycubic Kobra 2","kobra":"Anycubic Kobra","vyper":"Anycubic Vyper",
+  "neptune 4 max":"Elegoo Neptune 4 Max","neptune 4 plus":"Elegoo Neptune 4 Plus",
+  "neptune 4 pro":"Elegoo Neptune 4 Pro","neptune 4":"Elegoo Neptune 4",
+  "neptune 3 pro":"Elegoo Neptune 3 Pro","neptune 3":"Elegoo Neptune 3",
+  "snapmaker artisan":"Snapmaker Artisan","snapmaker j1s":"Snapmaker J1s",
+  "snapmaker j1":"Snapmaker J1","snapmaker u1":"Snapmaker U1",
+  "sv08":"Sovol SV08","sv06 plus":"Sovol SV06 Plus","sv06":"Sovol SV06",
+};
+
+// ── INIT ──────────────────────────────────────────────────
+let chartInstance = null;
+let _sonuc = {};
+
+window.onload=function(){
+  const sy=document.getElementById('sel_yazici');
+  Object.keys(YAZICILAR).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;sy.appendChild(o);});
+  const sf=document.getElementById('sel_fil');
+  Object.keys(FILAMENTLER).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;sf.appendChild(o);});
+  filamentSec();
+  presetListeGuncelle();
+};
+
+// ── DENEYİM ───────────────────────────────────────────────
+function setExp(key,rate){
+  ['yeni','orta','pro'].forEach(k=>document.getElementById('btn-'+k).className='exp-btn');
+  document.getElementById('btn-'+key).className='exp-btn active-'+key;
+  document.getElementById('error_rate').value=rate;
+}
+
+// ── SEÇİMLER ─────────────────────────────────────────────
+function yaziciSec(){
+  const v=document.getElementById('sel_yazici').value;
+  const w=YAZICILAR[v]; const note=document.getElementById('watt-note');
+  if(w>0){document.getElementById('printer_watt').value=w;note.className='sel-note ok';note.textContent=`✓ ${v} için ortalama ${w}W`;}
+  else if(v.includes('listede yok')){note.className='sel-note warn';note.textContent='⚠️ Yazıcınız listede bulunamadı — lütfen watt değerini elle girin!';}
+  else{note.className='sel-note ok';note.textContent='Listeden seçin veya elle girin';}
+}
+
+function filamentSec(){
+  const v=document.getElementById('sel_fil').value;
+  const d=FILAMENTLER[v]; const note=document.getElementById('fil-note');
+  if(d){
+    document.getElementById('fil_price').value=d.fiyat;
+    note.className=d.ek>0?'sel-note warn':'sel-note ok';
+    note.textContent=`${d.aciklama} • ${d.ek>0?'+'+d.ek+'W ısı farkı':'Ek watt yok'} • ${d.fiyat} TL/kg`;
+  }
+}
+
+function toggleKabin(){
+  const checked=document.getElementById('kabin').checked;
+  const span=document.getElementById('kabin-result');
+  if(checked){
+    const ph=parseFloat(document.getElementById('print_hours').value)||0;
+    const ep=parseFloat(document.getElementById('elec_price').value)||4.20;
+    const m=(0.3*ph*ep).toFixed(2);
+    span.textContent=ph>0?`→ 300W × ${ph}s × ${ep}TL = ${m}TL`:'⚠️ Önce baskı süresini girin!';
+    span.style.color=ph>0?'var(--green)':'var(--yellow)';
+  } else {span.textContent='';}
+}
+
+// ── G-CODE PARSE (Güçlendirilmiş) ─────────────────────────
+function handleDrop(e){
+  e.preventDefault();document.getElementById('dropZone').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0]; if(f) handleFile(f);
+}
+function handleFile(file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>parseGcode(e.target.result,file.name);
+  reader.readAsText(file,'utf-8');
+}
+
+function parseGcode(text,fname){
+  const lines=text.split('\n');
+  let filG=null,printS=null,printer=null,ftype=null;
+  const hatalar=[];
+
+  for(const line of lines){
+    const tr=line.trim();
+    if(!tr.startsWith(';')) continue;
+    const low=tr.toLowerCase();
+    const content=tr.slice(1).trim();
+
+    // ── FİLAMENT GRAM — çok pattern ──
+    // Cura: ;Filament used: 4.567m
+    if(filG===null && /filament used[^[]*:.*\d+\.?\d*\s*m(?!m)/i.test(tr)){
+      const m=tr.match(/([\d.]+)\s*m(?!m)/i);
+      if(m) filG=Math.round(Math.PI*0.875**2*parseFloat(m[1])*100*filamentYogunluk()/100*100)/100;
+    }
+    // Bambu/Orca: ;filament used [g] = 12.34
+    if(filG===null && low.includes('filament used [g]')){
+      const m=content.match(/=\s*([\d.]+)/); if(m) filG=parseFloat(m[1]);
+    }
+    // Bambu/Orca: ;filament used [mm] = 1234
+    if(filG===null && low.includes('filament used [mm]') && !low.includes('[mm3]')){
+      const m=content.match(/=\s*([\d.]+)/);
+      if(m) filG=Math.round(Math.PI*0.875**2*parseFloat(m[1])*filamentYogunluk()/1000*100)/100;
+    }
+    // PrusaSlicer: ;filament used [mm3] = 1234
+    if(filG===null && low.includes('filament used [mm3]')){
+      const m=content.match(/=\s*([\d.]+)/);
+      if(m) filG=Math.round(parseFloat(m[1])*filamentYogunluk()/1000*100)/100;
+    }
+    // Genel: filament_weight_g veya total filament used
+    if(filG===null && (low.includes('filament_weight_g')||low.includes('total filament'))){
+      const m=content.match(/([\d.]+)/); if(m) filG=parseFloat(m[1]);
+    }
+
+    // ── BASKI SÜRESİ — Cura, Bambu, Orca, Prusa ──
+    if(printS===null && (
+      low.includes('print time')||low.includes('estimated printing time')||
+      low.includes('estimated time')||low.includes('total time')||
+      low.includes('time elapsed')||low.includes('print duration')
+    )){
+      const t=content.replace(/.*[=:]/,'');
+      const hm=t.match(/(\d+)\s*h/i),mm=t.match(/(\d+)\s*m(?!s)/i),sm=t.match(/(\d+)\s*s/i);
+      let total=0;
+      if(hm) total+=parseInt(hm[1])*3600;
+      if(mm) total+=parseInt(mm[1])*60;
+      if(sm) total+=parseInt(sm[1]);
+      if(total>0) printS=total;
+    }
+
+    // ── YAZICI — çok pattern ──
+    if(!printer && (
+      low.includes('printer_model')||low.includes('machine_name')||
+      low.includes('printer model')||low.includes('printer name')||
+      low.includes('machine type')
+    )){
+      const val=(content.replace(/.*[=:]/,'')).trim().toLowerCase();
+      const sorted=Object.entries(GCODE_MAP).sort((a,b)=>b[0].length-a[0].length);
+      for(const[k,n] of sorted){if(val.includes(k)){printer=n;break;}}
+    }
+
+    // ── FİLAMENT TİPİ — çok pattern ──
+    if(!ftype && (low.includes('filament_type')||low.includes('filament type')||low.includes('material_type'))){
+      const val=(content.replace(/.*[=:]/,'')).trim().toUpperCase();
+      for(const fk of Object.keys(FILAMENTLER)){
+        if(val.includes(fk.toUpperCase())||fk.toUpperCase().startsWith(val)){ftype=fk;break;}
+      }
+    }
+    if(filG&&printS&&printer&&ftype) break;
+  }
+
+  // Hata mesajları
+  if(!filG) hatalar.push('Filament miktarı okunamadı → elle girin');
+  if(!printS) hatalar.push('Baskı süresi okunamadı → elle girin');
+  if(!printer) hatalar.push('Yazıcı modeli tanınamadı → listeden seçin');
+  if(!ftype) hatalar.push('Filament tipi okunamadı → listeden seçin');
+
+  const hataDiv=document.getElementById('parse-hata');
+  if(hatalar.length>0&&hatalar.length<4){
+    hataDiv.style.display='block';
+    hataDiv.innerHTML='⚠️ Bazı bilgiler okunamadı:<br>• '+hatalar.join('<br>• ');
+  } else { hataDiv.style.display='none'; }
+
+  const dz=document.getElementById('dropZone'); dz.classList.add('loaded');
+  document.getElementById('dropText').textContent='✅ '+fname;
+
+  const setR=(elId,lblId,val,txt,ok)=>{
+    if(ok&&elId) document.getElementById(elId).value=val;
+    const lbl=document.getElementById(lblId);
+    lbl.textContent=txt; lbl.style.color=ok?'var(--green)':'var(--yellow)';
+  };
+
+  filG? setR('filament_g','r-fil',filG,filG+'gr ✓',true) : setR(null,'r-fil',0,'Okunamadı — elle girin',false);
+  if(printS){
+    const hrs=printS/3600; document.getElementById('print_hours').value=Math.round(hrs*100)/100;
+    const h2=Math.floor(hrs),m2=Math.round((hrs-h2)*60);
+    setR(null,'r-time',0,`${h2}s ${m2}dk ✓`,true);
+  } else setR(null,'r-time',0,'Okunamadı — elle girin',false);
+  if(printer){document.getElementById('sel_yazici').value=printer;yaziciSec();setR(null,'r-printer',0,printer+' ✓',true);}
+  else{document.getElementById('sel_yazici').value='⚠️  Yazıcım listede yok — elle gireceğim';yaziciSec();setR(null,'r-printer',0,'Tanınamadı — listeden seçin',false);}
+  if(ftype){document.getElementById('sel_fil').value=ftype;filamentSec();setR(null,'r-ftype',0,ftype+' ✓',true);}
+  else setR(null,'r-ftype',0,'Okunamadı — listeden seçin',false);
+}
+
+// ── HESAPLAMA ─────────────────────────────────────────────
+function hesapla(){
+  const fg=parseFloat(document.getElementById('filament_g').value)||0;
+  const ph=parseFloat(document.getElementById('print_hours').value)||0;
+  if(fg<=0||ph<=0){alert('Filament miktarı ve baskı süresi girilmeden hesaplama yapılamaz!\nG-Code yükleyin ya da manuel girin.');return;}
+
+  const adet=Math.max(1,parseInt(document.getElementById('adet').value)||1);
+  const filType=document.getElementById('sel_fil').value;
+  const ekWatt=FILAMENTLER[filType]?FILAMENTLER[filType].ek:0;
+  const pwBase=parseFloat(document.getElementById('printer_watt').value)||200;
+  const pw=pwBase+ekWatt;
+  const fp=parseFloat(document.getElementById('fil_price').value)||750;
+  const ep=parseFloat(document.getElementById('elec_price').value)||4.20;
+  const pc=parseFloat(document.getElementById('printer_cost').value)||8000;
+  const plife=parseFloat(document.getElementById('printer_life').value)||3000;
+  const sm=parseFloat(document.getElementById('sarf_monthly').value)||0;
+  const sp=parseFloat(document.getElementById('sarf_prints').value)||20;
+  const err=(parseFloat(document.getElementById('error_rate').value)||0)/100;
+  const supExtra=(parseFloat(document.getElementById('support_extra').value)||0)/100;
+  const lh=parseFloat(document.getElementById('labor_h').value)||0;
+  const hourlyWage=parseFloat(document.getElementById('hourly_wage').value)||200;
+  const xcost=parseFloat(document.getElementById('extra_cost').value)||0;
+  // Son işlem maliyeti
+  const ppRows=document.querySelectorAll('#postproc-list .postproc-row');
+  let ppMaliyet=0, ppSure=0;
+  ppRows.forEach(row=>{
+    const cb=row.querySelector('input[type=checkbox]');
+    if(cb&&cb.checked){ppMaliyet+=parseFloat(row.dataset.maliyet)||0;ppSure+=parseFloat(row.dataset.sure)||0;}
+  });
+  const profit=(parseFloat(document.getElementById('profit').value)||0)/100;
+  const comm=(parseFloat(document.getElementById('commission').value)||0)/100;
+  const kargo=parseFloat(document.getElementById('kargo').value)||0;
+  const kdv=(parseFloat(document.getElementById('kdv').value)||0)/100;
+  const kabin=document.getElementById('kabin').checked;
+  const kabinCost=kabin?0.3*ph*ep:0;
+
+  const filCost=(fg/1000)*fp;
+  const elecCost=(pw/1000)*ph*ep;
+  const printCost=(pc/plife)*ph;
+  const sarfCost=sp>0?sm/sp:0;
+  const base=filCost+elecCost+printCost+sarfCost+kabinCost+xcost;
+  const totalErr=err+supExtra;
+  const errCost=base*totalErr;
+  const laborCost=hourlyWage*(lh+ppSure);
+  const ppSabitCost=ppMaliyet; // sarf/malzeme kısmı
+  const subtotal=base+errCost+laborCost+ppSabitCost;
+  const profitAmt=subtotal*profit;
+  const preComm=subtotal+profitAmt;
+  // ✅ DOĞRU KOMİSYON: satış fiyatı üzerinden
+  const final=comm<1?(preComm+kargo)/(1-comm):preComm+kargo;
+  const commAmt=final-preComm-kargo;
+  const kdvAmt=final*kdv;
+  const finalKdvli=final+kdvAmt;
+  const finalAdet=comm<1?(preComm*adet+kargo)/(1-comm):preComm*adet+kargo;
+  const finalAdetKdvli=finalAdet+finalAdet*kdv;
+  // Saatlik kazanç
+  const toplamSure=ph+lh;
+  const saatlikKazanc=toplamSure>0?profitAmt/toplamSure:0;
+
+  _sonuc={final,finalKdvli,kdv,fg,ph,adet,filType,subtotal,profitAmt,saatlikKazanc};
+
+  const fmt=v=>v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' TL';
+  const elecLabel=`⚡ Elektrik${ekWatt>0?' (+'+ekWatt+'W filament ısısı)':''}${kabin?' (+300W kabin)':''}`;
+
+  const rows=[
+    ['🧱 Filament Maliyeti',filCost,''],
+    [elecLabel,elecCost,''],
+    ['🖨 Yazıcı Aşınması',printCost,''],
+    ['🔧 Sarf Malzeme + Bakım',sarfCost,''],
+    ['🔌 Kabin Isıtıcı',kabinCost,''],
+    ['📦 Ek Masraf',xcost,''],
+    [`❌ Hata + Fire Payı (% ${Math.round(totalErr*100)})`,errCost,'yellow'],
+    [`👷 Emek (${hourlyWage} TL/saat)`,laborCost,''],
+    ...(ppSabitCost>0?[['🎨 Son İşlem Malzemeleri',ppSabitCost,'']]:[]),
+    null,
+    ['📦 Toplam Maliyet',subtotal,'blue'],
+    [`💹 Kâr (% ${Math.round(profit*100)})`,profitAmt,''],
+    ['🚚 Kargo',kargo,'blue'],
+    [`🏪 Platform Komisyonu (% ${Math.round(comm*100)})`,commAmt,'blue'],
+    [`🧾 KDV (% ${Math.round(kdv*100)})`,kdvAmt,'blue'],
+  ];
+
+  let html='';
+  const chartData={labels:[],values:[],colors:['#5b8dee','#4ecba8','#a78bfa','#f0c060','#ff5c5c','#f97316','#ec4899','#10b981']};
+  let ci=0;
+  for(const row of rows){
+    if(!row){html+='<div class="result-divider"></div>';continue;}
+    const[label,val,cls]=row;
+    html+=`<div class="result-row"><span class="r-label">${label}</span><span class="r-val ${cls}">${fmt(val)}</span></div>`;
+    if(val>0&&cls!=='blue'){
+      chartData.labels.push(label.replace(/^[^\s]+\s/,''));
+      chartData.values.push(Math.round(val*100)/100);
+      chartData.colors.push(chartData.colors[ci%chartData.colors.length]);ci++;
+    }
+  }
+  html+='<div class="result-divider"></div>';
+  html+=`<div class="result-final"><span class="r-label">🎯 KDV HARİÇ SATIŞ</span><span class="r-val" style="font-size:1.1rem;color:var(--accent)">${fmt(final)}</span></div>`;
+  if(kdv>0) html+=`<div class="result-final"><span class="r-label">🎯 KDV DAHİL SATIŞ</span><span class="r-val">${fmt(finalKdvli)}</span></div>`;
+  if(adet>1){
+    html+=`<div class="result-adet"><span class="r-label">📦 ${adet} Adet KDV Hariç</span><span class="r-val">${fmt(finalAdet)}</span></div>`;
+    if(kdv>0) html+=`<div class="result-adet"><span class="r-label">📦 ${adet} Adet KDV Dahil</span><span class="r-val">${fmt(finalAdetKdvli)}</span></div>`;
+  }
+  html+=`<div class="kazanc-box"><p>Bu fiyattan satarsan toplam süre başına kazancın</p><strong>${fmt(saatlikKazanc)} / saat</strong></div>`;
+
+  document.getElementById('result-body').innerHTML=html;
+  document.getElementById('result-card').style.display='block';
+  document.getElementById('wa-btn').style.display='block';
+
+  // Grafik
+  if(chartInstance) chartInstance.destroy();
+  const ctx=document.getElementById('myChart').getContext('2d');
+  chartInstance=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:chartData.labels,datasets:[{data:chartData.values,backgroundColor:['#5b8dee','#4ecba8','#a78bfa','#f0c060','#ff5c5c','#f97316','#ec4899','#10b981'],borderWidth:2,borderColor:'#212840'}]},
+    options:{plugins:{legend:{labels:{color:'#dde3f0',font:{size:11}}}},cutout:'55%'}
+  });
+
+  document.getElementById('result-card').scrollIntoView({behavior:'smooth'});
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────
+function teklifKopyala(){
+  const fmt=v=>v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' TL';
+  let m=`Merhaba! 3D baskı projeniz için fiyat teklifim:\n\n`;
+  m+=`⚖️ Ağırlık: ${_sonuc.fg} gram\n`;
+  m+=`⏱️ Üretim Süresi: ${_sonuc.ph} saat\n`;
+  m+=`🖨 Filament: ${_sonuc.filType}\n`;
+  if(_sonuc.adet>1){m+=`📦 Adet: ${_sonuc.adet}\n`;m+=`💰 Birim KDV Hariç: ${fmt(_sonuc.final)}\n`;}
+  else{m+=`💰 KDV Hariç: ${fmt(_sonuc.final)}\n`;}
+  if(_sonuc.kdv>0) m+=`💰 KDV Dahil: ${fmt(_sonuc.finalKdvli)}\n`;
+  m+=`\nOnaylamanız durumunda üretime hemen başlayabiliriz.\n`;
+  m+=`\n🌐 biseyleryapalim.com`;
+  navigator.clipboard.writeText(m).then(()=>alert('✅ Teklif kopyalandı!\nWhatsApp veya istediğiniz uygulamaya yapıştırabilirsiniz.')).catch(()=>prompt('Kopyalayın:',m));
+}
+
+// ── PRESET (localStorage) ─────────────────────────────────
+function postprocGuncelle(){
+  const ppRows=document.querySelectorAll('#postproc-list .postproc-row');
+  let toplam=0, sure=0, isimler=[];
+  ppRows.forEach(row=>{
+    const cb=row.querySelector('input[type=checkbox]');
+    if(cb&&cb.checked){
+      toplam+=parseFloat(row.dataset.maliyet)||0;
+      sure+=parseFloat(row.dataset.sure)||0;
+      isimler.push(row.querySelector('label').textContent.trim());
+    }
+  });
+  const div=document.getElementById('pp-toplam');
+  if(toplam>0){
+    div.style.display='block';
+    document.getElementById('pp-toplam-txt').textContent=`${toplam} TL malzeme + ${sure} saat emek`;
+  } else { div.style.display='none'; }
+}
+
+function presetKaydet(){
+  const isim=prompt('Bu ayar setine bir isim verin:\n(Örn: Bambu P1S + PLA Seri)');
+  if(!isim) return;
+  const ayarlar={
+    yazici:document.getElementById('sel_yazici').value,
+    watt:document.getElementById('printer_watt').value,
+    fil:document.getElementById('sel_fil').value,
+    filFiyat:document.getElementById('fil_price').value,
+    elec:document.getElementById('elec_price').value,
+    printerCost:document.getElementById('printer_cost').value,
+    printerLife:document.getElementById('printer_life').value,
+    sarf:document.getElementById('sarf_monthly').value,
+    sarfPrint:document.getElementById('sarf_prints').value,
+    laborH:document.getElementById('labor_h').value,
+    hourlyWage:document.getElementById('hourly_wage').value,
+    profit:document.getElementById('profit').value,
+    comm:document.getElementById('commission').value,
+    kdv:document.getElementById('kdv').value,
+    errorRate:document.getElementById('error_rate').value,
+    supExtra:document.getElementById('support_extra').value,
+  };
+  const presets=JSON.parse(localStorage.getItem('bsy_presets')||'{}');
+  presets[isim]=ayarlar;
+  localStorage.setItem('bsy_presets',JSON.stringify(presets));
+  presetListeGuncelle();
+  alert(`✅ "${isim}" kaydedildi!`);
+}
+
+function presetYukle(isim){
+  const presets=JSON.parse(localStorage.getItem('bsy_presets')||'{}');
+  const a=presets[isim]; if(!a) return;
+  document.getElementById('sel_yazici').value=a.yazici; yaziciSec();
+  document.getElementById('printer_watt').value=a.watt;
+  document.getElementById('sel_fil').value=a.fil; filamentSec();
+  document.getElementById('fil_price').value=a.filFiyat;
+  document.getElementById('elec_price').value=a.elec;
+  document.getElementById('printer_cost').value=a.printerCost;
+  document.getElementById('printer_life').value=a.printerLife||3000;
+  document.getElementById('sarf_monthly').value=a.sarf;
+  document.getElementById('sarf_prints').value=a.sarfPrint;
+  document.getElementById('labor_h').value=a.laborH;
+  document.getElementById('hourly_wage').value=a.hourlyWage||200;
+  document.getElementById('profit').value=a.profit;
+  document.getElementById('commission').value=a.comm;
+  document.getElementById('kdv').value=a.kdv||20;
+  document.getElementById('error_rate').value=a.errorRate;
+  document.getElementById('support_extra').value=a.supExtra||0;
+}
+
+function presetSil(isim){
+  if(!confirm(`"${isim}" silinsin mi?`)) return;
+  const presets=JSON.parse(localStorage.getItem('bsy_presets')||'{}');
+  delete presets[isim];
+  localStorage.setItem('bsy_presets',JSON.stringify(presets));
+  presetListeGuncelle();
+}
+
+function presetListeGuncelle(){
+  const presets=JSON.parse(localStorage.getItem('bsy_presets')||'{}');
+  const div=document.getElementById('preset-btns'); div.innerHTML='';
+  Object.keys(presets).forEach(isim=>{
+    const wrap=document.createElement('span');
+    const btn=document.createElement('button');
+    btn.textContent=isim; btn.onclick=()=>presetYukle(isim); btn.title='Yükle';
+    const del=document.createElement('button');
+    del.textContent='✕'; del.style.cssText='font-size:.65rem;padding:3px 6px;margin-left:2px;color:#ff5c5c;border-color:#ff5c5c;';
+    del.onclick=()=>presetSil(isim);
+    wrap.appendChild(btn); wrap.appendChild(del);
+    div.appendChild(wrap);
+  });
+  if(Object.keys(presets).length===0){
+    const p=document.createElement('span');
+    p.className='preset-label'; p.textContent='Henüz kayıt yok';
+    div.appendChild(p);
+  }
+}
+</script>
+</body>
+</html>
